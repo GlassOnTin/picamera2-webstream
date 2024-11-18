@@ -20,19 +20,49 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if twine is installed
-if ! command -v twine &>/dev/null; then
-    log_info "Installing twine..."
-    pip install twine
-fi
+# Setup virtual environment for publishing
+setup_venv() {
+    log_info "Setting up virtual environment for publishing..."
+    
+    # Remove existing publish-venv if it exists
+    if [ -d "publish-venv" ]; then
+        log_warn "Removing existing publish virtual environment..."
+        rm -rf publish-venv
+    fi
+    
+    # Create fresh virtual environment
+    python3 -m venv publish-venv
+    
+    # Activate virtual environment
+    source publish-venv/bin/activate
+    
+    # Upgrade pip
+    pip install --upgrade pip
+    
+    # Install required publishing tools
+    pip install twine build
+    
+    log_info "Virtual environment setup complete"
+}
+
+# Cleanup function
+cleanup() {
+    log_info "Cleaning up..."
+    if [ -n "$VIRTUAL_ENV" ]; then
+        deactivate
+    fi
+    rm -rf publish-venv
+}
+
+# Set trap to clean up on exit
+trap cleanup EXIT
 
 # Clean previous builds
 log_info "Cleaning previous builds..."
 rm -rf build/ dist/ *.egg-info/
 
-# Install build dependencies
-log_info "Installing build tools..."
-pip install --upgrade build
+# Setup and activate virtual environment
+setup_venv
 
 # Build the package
 log_info "Building package..."
@@ -49,8 +79,12 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
     log_info "Uploading to TestPyPI..."
     twine upload --repository testpypi dist/*
     
-    log_info "Testing installation from TestPyPI..."
+    log_info "Creating test environment..."
+    python3 -m venv test-venv
+    source test-venv/bin/activate
     pip install --index-url https://test.pypi.org/simple/ picamera2-webstream
+    deactivate
+    rm -rf test-venv
     
     read -p "Did the TestPyPI installation work correctly? Ready to publish to PyPI? (y/N) " -n 1 -r
     echo
