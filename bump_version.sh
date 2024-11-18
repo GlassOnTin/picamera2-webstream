@@ -145,7 +145,7 @@ echo
 log_info "Version bump complete!"
 echo "Next steps:"
 echo "1. Push changes and tag:"
-echo "   git push origin main"
+echo "   git push origin master"
 echo "   git push origin v$NEW_VERSION"
 echo
 echo "2. Publish to PyPI:"

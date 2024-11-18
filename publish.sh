@@ -69,29 +69,22 @@ log_info "Building package..."
 python -m build
 
 # Check the distribution files
-log_info "Checking distribution files..."
+log_info "Checking distribution files with twine..."
 twine check dist/*
 
-# Ask if we should upload to TestPyPI first
-read -p "Would you like to upload to TestPyPI first? (Recommended) (Y/n) " -n 1 -r
+# Final confirmation before publishing
+log_info "Ready to upload to PyPI"
+log_warn "Please ensure you have:"
+echo "1. Updated the version number in pyproject.toml"
+echo "2. Committed all changes to git"
+echo "3. Created a git tag for this version"
+echo "4. Have your PyPI credentials ready (~/.pypirc)"
 echo
-if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-    log_info "Uploading to TestPyPI..."
-    twine upload --repository testpypi dist/*
-    
-    log_info "Creating test environment..."
-    python3 -m venv test-venv
-    source test-venv/bin/activate
-    pip install --index-url https://test.pypi.org/simple/ picamera2-webstream
-    deactivate
-    rm -rf test-venv
-    
-    read -p "Did the TestPyPI installation work correctly? Ready to publish to PyPI? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_warn "Aborting PyPI upload. Please fix any issues and try again."
-        exit 0
-    fi
+read -p "Continue with PyPI upload? (y/N) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    log_warn "Aborting PyPI upload."
+    exit 0
 fi
 
 # Upload to PyPI
@@ -100,3 +93,4 @@ twine upload dist/*
 
 log_info "Publishing complete!"
 log_info "Package can now be installed with: pip install picamera2-webstream"
+log_info "Please push the git tag: git push origin <tag-name>"

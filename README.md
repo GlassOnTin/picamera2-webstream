@@ -23,7 +23,7 @@ A Flask-based web streaming solution for Raspberry Pi cameras using PiCamera2. S
 
 ## Installation
 
-### Via pip (Coming Soon)
+### Via pip
 ```bash
 pip install picamera2-webstream
 ```
@@ -78,20 +78,64 @@ if __name__ == '__main__':
 - Accept the self-signed certificate warning
 - View your camera stream!
 
-## Configuration
+## Camera Configuration
 
+### Automatic Configuration
+To find the optimal settings for your camera, run the diagnostic tool:
+
+```bash
+python examples/camera_diagnostics.py
+```
+
+This will:
+1. Detect all available cameras
+2. Show detailed camera capabilities
+3. Test different resolutions and formats
+4. Measure actual achievable framerates
+5. Suggest optimal configuration settings
+
+### Manual Configuration
 You can customize various parameters when initializing the VideoStream:
 
 ```python
 stream = VideoStream(
-    resolution=(1280, 720),
-    framerate=30,
-    format="MJPEG",
-    brightness=0.0,
-    contrast=1.0,
-    saturation=1.0
+    resolution=(1280, 720),  # Width x Height
+    framerate=30,           # Target framerate
+    format="MJPEG",        # Video format
+    brightness=0.0,        # -1.0 to 1.0
+    contrast=1.0,          # 0.0 to 2.0
+    saturation=1.0         # 0.0 to 2.0
 )
 ```
+
+Common camera settings:
+1. Resolution: Common values include (1920, 1080), (1280, 720), (640, 480)
+2. Format: Usually "MJPEG" for web streaming
+3. Framerate: Higher values (30+) for smooth video, lower values (15-) for reduced bandwidth
+
+To see all available settings for your camera:
+```bash
+# List all video devices
+v4l2-ctl --list-devices
+
+# Show device capabilities (replace X with your device number)
+v4l2-ctl -d /dev/videoX --all
+
+# List supported formats
+v4l2-ctl -d /dev/videoX --list-formats-ext
+```
+
+For USB cameras, you might also want to check:
+```bash
+# Show detailed USB device information
+lsusb -v | grep -A 10 "Video"
+```
+
+### Performance Considerations
+- Higher resolutions and framerates require more CPU and bandwidth
+- MJPEG format provides good quality with reasonable bandwidth usage
+- If streaming over the internet, consider lower resolutions and framerates
+- Monitor CPU usage and network bandwidth to find optimal settings
 
 ## Development
 
