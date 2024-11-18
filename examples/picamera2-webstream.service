@@ -1,0 +1,18 @@
+[Unit]
+Description=PiCamera2 Web Stream Service
+After=network.target
+
+[Service]
+Type=simple
+User=<your-username>
+Group=<your-group>
+WorkingDirectory=$HOME/picamera2-webstream
+Environment=PATH=$HOME/picamera2-webstream/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=$HOME/picamera2-webstream/venv/bin/python $HOME/picamera2-webstream/examples/stream_service.py
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/picamera2-webstream.log
+StandardError=append:/var/log/picamera2-webstream.log
+
+[Install]
+WantedBy=multi-user.target
