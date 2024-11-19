@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picamera2-webstream"
-version = "0.2.0"
+version = "0.2.1"
 description = "A Flask-based web streaming solution for Raspberry Pi cameras using PiCamera2"
 readme = "README.md"
 authors = [{ name = "Ian Ross Williams", email = "ianrosswilliams@gmail.com" }]
