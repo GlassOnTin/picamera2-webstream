@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picamera2-webstream"
-version = "0.1.6"
+version = "0.2.0"
 description = "A Flask-based web streaming solution for Raspberry Pi cameras using PiCamera2"
 readme = "README.md"
 authors = [{ name = "Ian Ross Williams", email = "ianrosswilliams@gmail.com" }]
@@ -20,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Topic :: Multimedia :: Video :: Capture",
 ]
-keywords = ["raspberry pi", "camera", "streaming", "picamera2", "flask"]
+keywords = ["raspberry pi", "camera", "streaming", "picamera2", "ffmpeg", "flask"]
 requires-python = ">=3.7"
 dependencies = [
     "flask>=2.0.0",

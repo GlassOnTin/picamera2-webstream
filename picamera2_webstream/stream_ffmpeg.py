@@ -22,46 +22,87 @@ class FFmpegStream:
     def start(self):
         command = [
             'ffmpeg',
-            '-f', 'video4linux2',
+            '-f', 'v4l2',
             '-input_format', 'mjpeg',
+            '-video_size', '2304x1296',
             '-i', self.device,
+            '-vf', f'scale={self.width}:{self.height}',
             '-c:v', 'mjpeg',
-            '-f', 'mpjpeg',
-            '-q:v', '5',  # Quality factor (2-31, lower is better)
-            '-r', str(self.framerate),
-            '-s', f'{self.width}x{self.height}',
-            '-'  # Output to pipe
+            '-q:v', '5',
+            '-f', 'image2pipe',
+            '-update', '1',
+            '-'
         ]
+        
+        logging.info(f"Starting FFmpeg with command: {' '.join(command)}")
         
         self.process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            bufsize=10**8
         )
+        
+        threading.Thread(target=self._log_stderr, daemon=True).start()
         return self
 
+    def _read_frame(self):
+        header = b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
+        footer = b'\r\n'
+        buffer = bytearray()
+        
+        while not self.stop_event.is_set():
+            try:
+                # Read in chunks
+                chunk = self.process.stdout.read(4096)
+                if not chunk:
+                    break
+                    
+                buffer.extend(chunk)
+                
+                # Look for JPEG end marker
+                while len(buffer) > 2:
+                    try:
+                        # Find start marker
+                        start = buffer.index(b'\xff\xd8')
+                        # Find end marker
+                        end = buffer.index(b'\xff\xd9', start) + 2
+                        
+                        # Extract the frame
+                        frame = buffer[start:end]
+                        # Remove the frame from buffer
+                        buffer = buffer[end:]
+                        
+                        # Yield the frame
+                        yield header + frame + footer
+                        
+                    except ValueError:
+                        # Start or end marker not found
+                        break
+                        
+                # Keep buffer size reasonable
+                if len(buffer) > 100000:
+                    buffer = buffer[-50000:]
+                    
+            except Exception as e:
+                logging.error(f"Error reading frame: {str(e)}")
+                break
+
+    def _log_stderr(self):
+        """Log FFmpeg error output"""
+        for line in iter(self.process.stderr.readline, b''):
+            line_text = line.decode().strip()
+            # Only log non-progress lines
+            if not line_text.startswith('frame='):
+                logging.info(f"FFmpeg: {line_text}")
     def stop(self):
         self.stop_event.set()
         if self.process:
             self.process.terminate()
-            self.process.wait()
-
-    def _read_frame(self):
-        marker = b'--ffmpeg\r\nContent-Type: image/jpeg\r\n'
-        while not self.stop_event.is_set():
-            if self.process.poll() is not None:
-                break
-                
-            frame = io.BytesIO()
-            while True:
-                chunk = self.process.stdout.read(1024)
-                if not chunk:
-                    break
-                frame.write(chunk)
-                if chunk.endswith(b'\xff\xd9'):  # JPEG end marker
-                    frame_data = frame.getvalue()
-                    yield marker + b'Content-Length: ' + str(len(frame_data)).encode() + b'\r\n\r\n' + frame_data + b'\r\n'
-                    break
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
 
 def create_app(stream_instance):
     app = Flask(__name__)
@@ -72,7 +113,8 @@ def create_app(stream_instance):
             logging.info(f"Client connected. Total clients: {stream_instance.clients}")
         
         try:
-            yield from stream_instance._read_frame()
+            for frame in stream_instance._read_frame():
+                yield frame
         finally:
             with stream_instance.clients_lock:
                 stream_instance.clients -= 1
@@ -108,7 +150,7 @@ def create_app(stream_instance):
     def video_feed():
         return Response(
             generate_frames(),
-            mimetype='multipart/x-mixed-replace; boundary=ffmpeg'
+            mimetype='multipart/x-mixed-replace; boundary=frame'
         )
 
     return app

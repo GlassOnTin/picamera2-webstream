@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import signal
-from stream_ffmpeg import FFmpegStream, create_app
+from picamera2_webstream.stream_ffmpeg import FFmpegStream, create_app
 
 logging.basicConfig(
     level=logging.INFO,

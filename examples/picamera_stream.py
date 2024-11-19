@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from picamera2_webstream import VideoStream, create_app
+from picamera2_webstream.stream_picamera import VideoStream, create_app
 import logging
 import signal
 

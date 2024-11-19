@@ -68,7 +68,7 @@ create_stream_script() {
 #!/usr/bin/env python3
 import logging
 import signal
-from picamera2_webstream import VideoStream, create_app
+from picamera2_webstream import FFmpegStream, create_app
 
 # Configure logging
 logging.basicConfig(

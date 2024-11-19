@@ -49,13 +49,17 @@ For a quick automated installation:
 ```bash
 git clone https://github.com/yourusername/picamera2-webstream.git
 cd picamera2-webstream
-./install.sh
-```
 
-For an ffmpeg rather than OpenCV based webstream:
+For an ffmpeg based webstream:
 ```
 ./install_ffmpeg.sh
 ```
+
+For a picamera2 OpenCV based webstream use:
+```
+./install_picamera.sh
+```
+
 
 The installation script will:
 1. Install all required system dependencies
@@ -79,23 +83,76 @@ To uninstall:
 
 ## Usage
 
-1. Basic usage:
-```python
-from picamera2_webstream import VideoStream
-from flask import Flask
+Two streaming implementations are available:
 
-app = Flask(__name__)
-stream = VideoStream()
-stream.start()
+### 1. FFmpeg-based (Recommended)
+```python
+from picamera2_webstream import FFmpegStream, create_ffmpeg_app
+
+stream = FFmpegStream(
+    width=1280,
+    height=720,
+    framerate=30,
+    device='/dev/video0'
+).start()
+
+app = create_ffmpeg_app(stream)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=443, ssl_context=('cert.pem', 'key.pem'))
 ```
 
-2. Access the stream:
-- Open your browser and navigate to `https://your-pi-ip`
-- Accept the self-signed certificate warning
-- View your camera stream!
+Advantages:
+- Lighter weight (fewer dependencies)
+- Hardware acceleration where available
+- Better performance for basic streaming
+- Works with both USB and CSI cameras
+- Lower CPU usage
+
+### 2. PiCamera2-based
+```python
+from picamera2_webstream import VideoStream, create_picamera_app
+
+stream = VideoStream(
+    resolution=(1280, 720),
+    framerate=30,
+    brightness=0.0,
+    contrast=1.0
+).start()
+
+app = create_picamera_app(stream)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=443, ssl_context=('cert.pem', 'key.pem'))
+```
+
+Advantages:
+- Full PiCamera2 feature set
+- More camera controls
+- Better for image processing
+- Native Raspberry Pi camera support
+- Access to raw camera data
+
+### Choosing the Right Implementation
+
+Use FFmpeg-based streaming when:
+- You need basic video streaming
+- You want minimal dependencies
+- CPU resources are limited
+- You're using a USB webcam
+
+Use PiCamera2-based streaming when:
+- You need advanced camera controls
+- You want to do image processing
+- You need raw camera data
+- You're using the Raspberry Pi camera module
+
+### Accessing the Stream
+
+For either implementation:
+1. Open your browser and navigate to `https://your-pi-ip`
+2. Accept the self-signed certificate warning
+3. View your camera stream!
 
 ## Camera Configuration
 

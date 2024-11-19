@@ -320,7 +320,7 @@ main() {
     log_warn "Please log out and back in for group changes to take effect"
     log_info "To start using picamera2-webstream:"
     echo "1. Activate the virtual environment: source venv/bin/activate"
-    echo "2. Run the example: python examples/basic_stream.py"
+    echo "2. Run the example: python examples/picamera_stream.py"
     echo "3. Open https://your-pi-ip in your browser"
 }
 
