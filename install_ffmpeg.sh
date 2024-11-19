@@ -47,14 +47,9 @@ install_system_dependencies() {
     sudo apt install -y \
         python3-full \
         python3-venv \
-        python3-libcamera \
-        python3-picamera2 \
-        python3-opencv \
-        python3-numpy \
+        ffmpeg \
         openssl \
-        libcap-dev \
-        python3-prctl \
-        raspi-config
+        v4l-utils
         
     log_info "System dependencies installed successfully"
 }

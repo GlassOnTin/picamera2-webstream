@@ -21,6 +21,20 @@ A Flask-based web streaming solution for Raspberry Pi cameras using PiCamera2. S
 - OpenCV
 - Flask
 
+## Dependencies
+
+### System Packages (installed via apt)
+- python3-libcamera
+- python3-picamera2
+- python3-opencv
+- python3-numpy
+
+### Virtual Environment Packages (installed via pip)
+- flask
+- Additional Python-only dependencies
+
+The split installation approach ensures compatibility with Raspberry Pi OS while keeping application-specific dependencies isolated.
+
 ## Installation
 
 ### Via pip
@@ -36,6 +50,11 @@ For a quick automated installation:
 git clone https://github.com/yourusername/picamera2-webstream.git
 cd picamera2-webstream
 ./install.sh
+```
+
+For an ffmpeg rather than OpenCV based webstream:
+```
+./install_ffmpeg.sh
 ```
 
 The installation script will:
