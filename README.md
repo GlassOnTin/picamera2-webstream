@@ -38,7 +38,7 @@ pip install picamera2-webstream
 For a quick automated installation:
 
 ```bash
-git clone https://github.com/yourusername/picamera2-webstream.git
+git clone https://github.com/glassontin/picamera2-webstream.git
 cd picamera2-webstream
 ```
 
@@ -211,7 +211,7 @@ If you want to modify the code:
 1. Create a development environment:
 ```bash
 # Clone and enter the repository
-git clone https://github.com/yourusername/picamera2-webstream.git
+git clone https://github.com/glassontin/picamera2-webstream.git
 cd picamera2-webstream
 
 # Create and activate virtual environment
