@@ -64,7 +64,7 @@ The installation script will:
 After installation completes:
 1. Log out and log back in (required for video group access)
 2. Activate the virtual environment: `source venv/bin/activate`
-3. Run the example: `python examples/basic_stream.py`
+3. Run the example: `python examples/ffmpeg_stream.py`
 4. Open `https://your-pi-ip` in your browser
 
 To uninstall:
