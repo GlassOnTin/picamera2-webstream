@@ -8,7 +8,7 @@ import signal
 from time import sleep
 
 class FFmpegStream:
-    def __init__(self, width=1280, height=720, framerate=30, device='/dev/video0'):
+    def __init__(self, width=1280, height=720, framerate=30, device='/dev/video1'):
         self.width = width
         self.height = height
         self.framerate = framerate

@@ -23,7 +23,7 @@ class VideoStream:
         self.picam2 = Picamera2(0)
         
         config = self.picam2.create_video_configuration(
-            main={"size": resolution, "format": format},
+            main={"size": self.resolution, "format": format},
             controls={
                 "Brightness": brightness,
                 "Contrast": contrast,

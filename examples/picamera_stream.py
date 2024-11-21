@@ -20,10 +20,12 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
+    stream = None
     try:
         # Create and start the video stream
         stream = VideoStream(
-            resolution=(1280, 720),
+            width=1280,
+            height=720,
             framerate=30,
             brightness=0.0,
             contrast=1.0,
@@ -44,4 +46,4 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error(f"Server error: {str(e)}")
     finally:
-        stream.stop()
+        if stream: stream.stop()

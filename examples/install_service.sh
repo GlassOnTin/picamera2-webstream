@@ -94,7 +94,8 @@ if __name__ == '__main__':
         stream = FFmpegStream(
             width=1280,
             height=720,
-            framerate=30
+            framerate=30,
+            device='/dev/video0'
         ).start()
         
         # Create Flask app with our stream

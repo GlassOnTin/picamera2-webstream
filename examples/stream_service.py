@@ -28,9 +28,7 @@ if __name__ == '__main__':
             width=1280,
             height=720,
             framerate=30,
-            #brightness=0.0,
-            #contrast=1.0,
-            #saturation=1.0
+            device='/dev/video0'
         ).start()
         
         # Create Flask app with our stream
