@@ -68,7 +68,8 @@ create_stream_script() {
 #!/usr/bin/env python3
 import logging
 import signal
-from picamera2_webstream import FFmpegStream, create_app
+from picamera2_webstream import VideoStream, create_picamera_app
+from picamera2_webstream import FFmpegStream, create_ffmpeg_app
 
 # Configure logging
 logging.basicConfig(
@@ -87,35 +88,32 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
+    stream = None
     try:
         # Create and start the video stream
-        stream = VideoStream(
-            resolution=(1280, 720),
-            framerate=30,
-            brightness=0.0,
-            contrast=1.0,
-            saturation=1.0
+        stream = FFmpegStream(
+            width=1280,
+            height=720,
+            framerate=30
         ).start()
         
         # Create Flask app with our stream
-        app = create_app(stream)
+        app = create_ffmpeg_app(stream)
         
         # Run the server
-        context = ('${INSTALL_DIR}/cert.pem', '${INSTALL_DIR}/key.pem')
+        context = ('/home/ian/picamera2-webstream/cert.pem', '/home/ian/picamera2-webstream/key.pem')
         app.run(
-            host='0.0.0.0', 
-            port=443, 
+            host='0.0.0.0',
+            port=443,
             ssl_context=context,
             threaded=True
         )
     except Exception as e:
         logging.error(f"Server error: {str(e)}")
     finally:
-        stream.stop()
+        if stream: stream.stop()
 EOL
-
-    chmod +x examples/stream_service.py
-    log_info "Created stream service script"
+    log_info "Created service script"
 }
 
 # Create log file
@@ -147,7 +145,7 @@ read -p "Would you like to start and enable the service now? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     sudo systemctl enable picamera2-webstream
-    sudo systemctl start picamera2-webstream
+    sudo systemctl restart picamera2-webstream
     log_info "Service started and enabled"
     echo "Check the status with: sudo systemctl status picamera2-webstream"
 else

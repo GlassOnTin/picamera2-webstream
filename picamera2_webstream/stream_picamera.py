@@ -10,8 +10,9 @@ from time import sleep, time
 import signal
 
 class VideoStream:
-    def __init__(self, resolution=(1280, 720), framerate=30, format="MJPEG",
+    def __init__(self, width=1280, height=720, framerate=30, format="MJPEG",
                  brightness=0.0, contrast=1.0, saturation=1.0):
+        self.resolution = (width, height)
         self.lock = threading.Lock()
         self.frame_buffer = None
         self.stop_event = threading.Event()
