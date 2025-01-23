@@ -49,7 +49,7 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${INSTALL_DIR}
 Environment=PATH=${VENV_PATH}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/stream_service.py
+ExecStart=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/ffmpeg_stream_service.py
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/picamera2-webstream.log
@@ -64,12 +64,11 @@ EOL
 
 # Create the stream service script
 create_stream_script() {
-    cat > examples/stream_service.py << EOL
+    cat > examples/ffmpeg_stream_service.py << EOL
 #!/usr/bin/env python3
 import logging
 import signal
-from picamera2_webstream import VideoStream, create_picamera_app
-from picamera2_webstream import FFmpegStream, create_ffmpeg_app
+from ffmpeg_webstream import VideoStream, create_app
 
 # Configure logging
 logging.basicConfig(

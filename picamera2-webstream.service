@@ -8,7 +8,7 @@ User=ian
 Group=ian
 WorkingDirectory=/home/ian/picamera2-webstream
 Environment=PATH=/home/ian/picamera2-webstream/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/home/ian/picamera2-webstream/venv/bin/python /home/ian/picamera2-webstream/examples/stream_service.py
+ExecStart=/home/ian/picamera2-webstream/venv/bin/python /home/ian/picamera2-webstream/examples/picamera2-webstream.py
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/picamera2-webstream.log

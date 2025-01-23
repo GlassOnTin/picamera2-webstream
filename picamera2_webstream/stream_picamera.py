@@ -70,35 +70,48 @@ class VideoStream:
     def _capture_frames(self):
         """Continuously capture frames from the camera"""
         frame_interval = 1/self.framerate
-        
+        retries = 0
+        max_retries = 3
+
         while not self.stop_event.is_set():
             try:
                 start_time = time()
-                
+
                 # Only capture if we have clients or no frame
                 if self.clients > 0 or self.frame_buffer is None:
                     self.buffer.seek(0)
                     self.buffer.truncate()
+
                     self.picam2.capture_file(self.buffer, format='jpeg')
                     jpeg_data = self.buffer.getvalue()
-                    
+
                     with self.lock:
                         self.frame_buffer = jpeg_data
-                        
+
                     if self.frame_count % 300 == 0:
                         logging.info(f"Stream stats - Frame: {self.frame_count}, "
-                                   f"Size: {len(jpeg_data)} bytes, "
-                                   f"Clients: {self.clients}")
+                                     f"Size: {len(jpeg_data)} bytes, "
+                                     f"Clients: {self.clients}")
                     self.frame_count += 1
-                
+                    retries = 0  # Reset retries on success
+
                 # Maintain frame rate
                 elapsed = time() - start_time
                 sleep_time = max(0, frame_interval - elapsed)
                 if sleep_time > 0:
                     sleep(sleep_time)
-                    
+
+            except RuntimeError as e:
+                logging.error(f"Runtime error during capture: {e}")
+                retries += 1
+                if retries >= max_retries:
+                    logging.error("Max retries exceeded. Restarting camera...")
+                    self.picam2.stop()
+                    sleep(1)  # Wait before restarting
+                    self.picam2.start()
+                    retries = 0
             except Exception as e:
-                logging.error(f"Error capturing frame: {str(e)}")
+                logging.error(f"Unexpected error during capture: {e}")
                 sleep(0.1)
 
 def create_app(stream_instance):

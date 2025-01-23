@@ -7,7 +7,7 @@ import io
 import signal
 from time import sleep
 
-class FFmpegStream:
+class VideoStream:
     def __init__(self, width=1280, height=720, framerate=30, device='/dev/video0'):
         self.width = width
         self.height = height
@@ -24,7 +24,7 @@ class FFmpegStream:
             'ffmpeg',
             '-f', 'v4l2',
             '-input_format', 'mjpeg',
-            '-video_size', '2304x1296',
+            '-video_size', f'{self.width}x{self.height}',
             '-i', self.device,
             '-vf', f'scale={self.width}:{self.height}',
             '-c:v', 'mjpeg',
@@ -40,7 +40,7 @@ class FFmpegStream:
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            bufsize=10**8
+            bufsize=10**9
         )
         
         threading.Thread(target=self._log_stderr, daemon=True).start()
@@ -81,7 +81,7 @@ class FFmpegStream:
                         break
                         
                 # Keep buffer size reasonable
-                if len(buffer) > 100000:
+                if len(buffer) > 1000000:
                     buffer = buffer[-50000:]
                     
             except Exception as e:

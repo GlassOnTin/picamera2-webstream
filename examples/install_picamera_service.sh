@@ -1,4 +1,4 @@
-#!/bin/bash
+        #!/bin/bash
 set -e
 
 # Text colors
@@ -49,7 +49,7 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${INSTALL_DIR}
 Environment=PATH=${VENV_PATH}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/stream_service.py
+ExecStart=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/picamera2-webstream.py
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/picamera2-webstream.log
@@ -64,12 +64,11 @@ EOL
 
 # Create the stream service script
 create_stream_script() {
-    cat > examples/stream_service.py << EOL
+    cat > examples/picamera2-webstream.py << EOL
 #!/usr/bin/env python3
 import logging
 import signal
-from picamera2_webstream import VideoStream, create_picamera_app
-from picamera2_webstream import FFmpegStream, create_ffmpeg_app
+from picamera2_webstream import VideoStream, create_app
 
 # Configure logging
 logging.basicConfig(
@@ -91,15 +90,17 @@ if __name__ == '__main__':
     stream = None
     try:
         # Create and start the video stream
-        stream = FFmpegStream(
+        stream = VideoStream(
             width=1280,
             height=720,
-            framerate=5,
-            device='/dev/video0'
+            framerate=30,
+            brightness=0.0,
+            contrast=1.0,
+            saturation=1.0
         ).start()
         
         # Create Flask app with our stream
-        app = create_ffmpeg_app(stream)
+        app = create_app(stream)
         
         # Run the server
         #context = ('/home/ian/picamera2-webstream/cert.pem', '/home/ian/picamera2-webstream/key.pem')
@@ -116,7 +117,7 @@ if __name__ == '__main__':
 EOL
     log_info "Created service script"
 }
-
+    
 # Create log file
 sudo touch /var/log/picamera2-webstream.log
 sudo chown $USER:$USER /var/log/picamera2-webstream.log
