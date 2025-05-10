@@ -1,0 +1,11 @@
+/var/log/picamera2-webstream.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    create 0644 root root
+    postrotate
+        systemctl restart picamera2-webstream.service
+    endscript
+}

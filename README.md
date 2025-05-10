@@ -241,6 +241,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Thanks to the picamera2 team for their excellent camera interface
 - The Flask team for their lightweight web framework
 
+## Intelligent Camera Detection
+
+PiCamera2 Web Streamer now includes intelligent camera detection that ensures it always finds the correct camera device, even if Linux changes the /dev numbering:
+
+1. **USB ID Detection**: Identifies cameras by vendor and product ID (e.g., Arducam 12MP = 0c45:636d)
+2. **Name Pattern Matching**: Falls back to identifying cameras by name
+3. **Configuration Options**: Fine-tune detection through config.ini
+4. **Diagnostic Tool**: Use `examples/find_camera.py` to troubleshoot camera detection
+
+### Configuration Options
+
+In `config.ini`, you can configure camera detection:
+
+```ini
+[camera]
+# Override auto-detection with a specific camera index
+# camera_index = 0
+
+# Force detection by USB vendor:product ID
+usb_camera_id = 0c45:636d
+```
+
+## Improved Logging System
+
+The new version includes a robust logging system:
+
+1. **Configurable Log Levels**: Set log verbosity in config.ini with DEBUG, INFO, WARNING, ERROR, or CRITICAL
+2. **Automatic Log Rotation**: Prevents log files from growing too large
+3. **Log Compression**: Old logs are automatically compressed to save space
+
+Logs are stored in `/var/log/picamera2-webstream.log` and rotated weekly.
+
 ## Troubleshooting
 
 Common issues and solutions:
@@ -249,15 +281,22 @@ Common issues and solutions:
    - Ensure the camera is properly connected
    - Check if the camera interface is enabled in `raspi-config`
    - Verify with `libcamera-hello` command
+   - Run the diagnostic tool: `python examples/find_camera.py`
 
-2. ImportError for picamera2:
+2. Camera found but with incorrect device:
+   - The system automatically detects the correct USB camera
+   - Specify a USB ID in config.ini: `usb_camera_id = vendor:product`
+   - Run the diagnostic tool to verify: `python examples/find_camera.py`
+
+3. Excessive logging:
+   - Reduce log level in config.ini: `level = WARNING`
+   - Check service configuration: `Environment=LIBCAMERA_LOG_LEVELS=*:WARNING`
+   - Rotate logs manually: `sudo logrotate /etc/logrotate.d/picamera2-webstream`
+
+4. ImportError for picamera2:
    - Make sure system packages are installed: `sudo apt install python3-libcamera python3-picamera2`
    - Ensure you're using the virtual environment
 
-3. SSL Certificate issues:
-   - Regenerate certificates if they've expired
-   - Ensure certificates are in the same directory as the script
-
-4. Permission denied errors:
+5. Permission denied errors:
    - Ensure your user is in the video group: `sudo usermod -a -G video $USER`
    - Logout and login again for group changes to take effect

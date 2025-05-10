@@ -49,7 +49,10 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${INSTALL_DIR}
 Environment=PATH=${VENV_PATH}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/stream_service.py
+# Reduce libcamera log level to prevent excessive logging
+Environment=LIBCAMERA_LOG_LEVELS=*:WARNING
+ExecStartPre=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/find_camera.py
+ExecStart=${VENV_PATH}/bin/python ${INSTALL_DIR}/examples/picamera2-webstream.py
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/picamera2-webstream.log
@@ -62,59 +65,13 @@ EOL
     log_info "Created systemd service file"
 }
 
-# Create the stream service script
+# Create the stream service script with improved camera detection
 create_stream_script() {
-    cat > examples/stream_service.py << EOL
-#!/usr/bin/env python3
-import logging
-import signal
-from picamera2_webstream import VideoStream, create_picamera_app
-from picamera2_webstream import FFmpegStream, create_ffmpeg_app
+    # Copy over the latest version of picamera2-webstream.py
+    cp ${INSTALL_DIR}/examples/picamera2-webstream.py ${INSTALL_DIR}/examples/stream_service.py
+    chmod +x ${INSTALL_DIR}/examples/stream_service.py
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-def signal_handler(signum, frame):
-    """Handle shutdown gracefully"""
-    logging.info("Shutdown signal received")
-    stream.stop()
-    exit(0)
-
-if __name__ == '__main__':
-    # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
-    stream = None
-    try:
-        # Create and start the video stream
-        stream = FFmpegStream(
-            width=1280,
-            height=720,
-            framerate=5,
-            device='/dev/video0'
-        ).start()
-        
-        # Create Flask app with our stream
-        app = create_ffmpeg_app(stream)
-        
-        # Run the server
-        #context = ('/home/ian/picamera2-webstream/cert.pem', '/home/ian/picamera2-webstream/key.pem')
-        app.run(
-            host='0.0.0.0',
-            port=8080,
-            #ssl_context=context,
-            threaded=True
-        )
-    except Exception as e:
-        logging.error(f"Server error: {str(e)}")
-    finally:
-        if stream: stream.stop()
-EOL
-    log_info "Created service script"
+    log_info "Created service script using latest camera detection improvements"
 }
 
 # Create log file
@@ -122,9 +79,32 @@ sudo touch /var/log/picamera2-webstream.log
 sudo chown $USER:$USER /var/log/picamera2-webstream.log
 log_info "Created log file"
 
+# Create log rotation configuration
+create_logrotate_config() {
+    log_info "Creating log rotation configuration..."
+    cat > picamera2-webstream.logrotate << EOL
+/var/log/picamera2-webstream.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    create 0644 root root
+    postrotate
+        systemctl restart picamera2-webstream.service
+    endscript
+}
+EOL
+
+    # Install logrotate configuration
+    sudo cp picamera2-webstream.logrotate /etc/logrotate.d/picamera2-webstream
+    log_info "Log rotation configuration installed"
+}
+
 # Create the service files
 create_service_file
 create_stream_script
+create_logrotate_config
 
 # Install the service
 log_info "Installing systemd service..."

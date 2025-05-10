@@ -278,10 +278,19 @@ format = MJPEG
 brightness = 0.0
 contrast = 1.0
 saturation = 1.0
+# Camera auto-detection is enabled by default
+# You can override with a specific index if needed
+# camera_index = 0
+# Enable the line below to force camera detection by USB vendor/product ID
+usb_camera_id = 0c45:636d
 
 [server]
-port = 443
+port = 8080
 host = 0.0.0.0
+
+[logging]
+# Logging levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+level = WARNING
 EOL
 }
 

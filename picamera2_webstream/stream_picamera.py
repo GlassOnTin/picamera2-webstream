@@ -8,6 +8,7 @@ import logging
 import io
 from time import sleep, time
 import signal
+from .camera_utils import get_camera_index
 
 class VideoStream:
     def __init__(self, width=1280, height=720, framerate=30, format="MJPEG",
@@ -19,35 +20,94 @@ class VideoStream:
         self.frame_count = 0
         self.clients = 0
         self.clients_lock = threading.Lock()
-        
-        self.picam2 = Picamera2(0)
-        
-        config = self.picam2.create_video_configuration(
-            main={"size": self.resolution, "format": format},
-            controls={
-                "Brightness": brightness,
-                "Contrast": contrast,
-                "Saturation": saturation,
-                "AnalogueGain": 1.0,
-                "AeEnable": True,
-                "ExposureTime": int(1000000/framerate)
-            },
-            buffer_count=4
-        )
-        
-        self.picam2.configure(config)
-        self.buffer = io.BytesIO()
         self.framerate = framerate
+        
+        # Get the camera index using our utility function
+        camera_index = get_camera_index()
+        logging.info(f"Using camera at index {camera_index}")
+        self.picam2 = Picamera2(camera_index)
+        
+        try:
+            # Simple configuration without problematic controls
+            config = self.picam2.create_video_configuration(
+                main={"size": self.resolution, "format": format},
+                buffer_count=4
+            )
+            
+            # Configure the camera
+            self.picam2.configure(config)
+            
+            # Apply camera controls after configuration
+            self.set_camera_properties(brightness, contrast, saturation)
+            
+            self.buffer = io.BytesIO()
+            logging.info("Camera configuration complete")
+        except Exception as e:
+            logging.error(f"Error configuring camera: {e}")
+            raise
+            
+    def set_camera_properties(self, brightness, contrast, saturation):
+        """
+        Set camera properties safely using v4l2 controls if available
+        """
+        try:
+            # Scale the normalized values to the camera's range
+            # These are set through libcamera metadata
+            controls = {}
+            
+            # Most v4l2 cameras support these controls but with different ranges
+            # We use a try/except block for each control to handle unsupported ones
+            try:
+                # Brightness: Map 0.0 to midpoint of range (-1.0 to 1.0 -> -64 to 64)
+                brightness_value = int(brightness * 64)
+                logging.info(f"Setting brightness to {brightness_value}")
+                controls["Brightness"] = brightness_value
+            except Exception as e:
+                logging.warning(f"Could not set brightness: {e}")
+                
+            try:
+                # Contrast: Map normalized to camera range (0.0 to 2.0 -> 0 to 64)
+                contrast_value = int(contrast * 32)
+                logging.info(f"Setting contrast to {contrast_value}")
+                controls["Contrast"] = contrast_value
+            except Exception as e:
+                logging.warning(f"Could not set contrast: {e}")
+                
+            try:
+                # Saturation: Map normalized to camera range (0.0 to 2.0 -> 0 to 128)
+                saturation_value = int(saturation * 64)
+                logging.info(f"Setting saturation to {saturation_value}")
+                controls["Saturation"] = saturation_value
+            except Exception as e:
+                logging.warning(f"Could not set saturation: {e}")
+                
+            # Apply controls if any were set
+            if controls:
+                logging.info(f"Applying camera controls: {controls}")
+                self.picam2.set_controls(controls)
+                
+        except Exception as e:
+            logging.warning(f"Error setting camera properties: {e}")
         
     def start(self):
         """Start the video streaming thread"""
-        self.picam2.start()
-        self._capture_single_frame()
-        self.capture_thread = threading.Thread(target=self._capture_frames, 
-                                            daemon=True, 
-                                            name="CaptureThread")
-        self.capture_thread.start()
-        return self
+        try:
+            self.picam2.start()
+            success = self._capture_single_frame()
+            
+            if not success:
+                logging.error("Failed to capture initial frame")
+                return None
+                
+            self.capture_thread = threading.Thread(target=self._capture_frames, 
+                                               daemon=True, 
+                                               name="CaptureThread")
+            self.capture_thread.start()
+            logging.info("Video stream started successfully")
+            return self
+        except Exception as e:
+            logging.error(f"Error starting camera: {e}")
+            return None
         
     def _capture_single_frame(self):
         """Capture a single frame"""
@@ -65,7 +125,10 @@ class VideoStream:
         """Stop the video streaming"""
         self.stop_event.set()
         if hasattr(self, 'picam2'):
-            self.picam2.stop()
+            try:
+                self.picam2.stop()
+            except Exception as e:
+                logging.error(f"Error stopping camera: {e}")
         
     def _capture_frames(self):
         """Continuously capture frames from the camera"""
@@ -106,10 +169,14 @@ class VideoStream:
                 retries += 1
                 if retries >= max_retries:
                     logging.error("Max retries exceeded. Restarting camera...")
-                    self.picam2.stop()
-                    sleep(1)  # Wait before restarting
-                    self.picam2.start()
-                    retries = 0
+                    try:
+                        self.picam2.stop()
+                        sleep(1)  # Wait before restarting
+                        self.picam2.start()
+                        retries = 0
+                    except Exception as restart_error:
+                        logging.error(f"Error restarting camera: {restart_error}")
+                        sleep(5)  # Give more time before next attempt
             except Exception as e:
                 logging.error(f"Unexpected error during capture: {e}")
                 sleep(0.1)
