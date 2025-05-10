@@ -20,24 +20,23 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual environments
 venv/
+env/
 ENV/
 
-# SSL Certificates
+# Certificates and keys
 *.pem
 *.key
 *.crt
 
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-
-# Config files
+# Local config
 config.ini
 
-# Logs
-*.log
+# Project specific
+test_image.jpg
+
+# System files
+.DS_Store
+.env
+.venv
